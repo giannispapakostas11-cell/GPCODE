@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GP Code — Online Personal Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --gold: #C9A84C; --gold-light: #E8C97A; --black: #0A0A0A; --orange: #E67E22; --surface: #161616; --text-light: #F5F0E8; --text-muted: #8A8070; --red: #C0392B; --border-gold: rgba(201,168,76,0.18); }
+  body { background: var(--black); color: var(--text-light); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px 60px; overflow: hidden; }
+  .hero-glow { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(201,168,76,0.1) 0%, transparent 70%); top: 40%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+  .hero-line-top { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.25); color: var(--gold-light); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; padding: 8px 20px; border-radius: 100px; margin-bottom: 28px; }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: clamp(48px, 9vw, 96px); font-weight: 900; line-height: 0.95; text-align: center; margin-bottom: 8px; letter-spacing: -2px; }
+  .hero-title .gold { color: var(--gold); font-style: italic; }
+  .hero-title .outline { -webkit-text-stroke: 1px rgba(201,168,76,0.4); color: transparent; }
+  .hero-subtitle { font-size: 15px; font-weight: 300; color: var(--text-muted); text-align: center; margin-top: 20px; margin-bottom: 36px; max-width: 380px; line-height: 1.7; }
+
+  .pressure-bar { width: 100%; max-width: 580px; margin-bottom: 24px; }
+  .spots-box { background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.28); border-radius: 2px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .spots-left { display: flex; align-items: center; gap: 10px; }
+  .spots-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: blink 1.2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  .spots-text { font-size: 13px; color: var(--text-muted); }
+  .spots-text strong { color: var(--text-light); font-weight: 500; }
+  .spots-count { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--red); }
+  .progress-wrap { margin-bottom: 10px; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .progress-label span { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+  .progress-label .fill-pct { color: var(--gold); }
+  .progress-track { width: 100%; height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 73%; background: linear-gradient(90deg, var(--gold-light), var(--orange)); animation: fillIn 1.8s ease both; }
+  @keyframes fillIn { from{width:0} to{width:73%} }
+  .timer-box { background: rgba(201,168,76,0.05); border: 1px solid var(--border-gold); border-radius: 2px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; }
+  .timer-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+  .timer-clock { display: flex; gap: 6px; align-items: center; }
+  .timer-unit { text-align: center; }
+  .timer-num { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--gold); display: block; line-height: 1; }
+  .timer-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+  .timer-sep { font-size: 16px; color: rgba(201,168,76,0.35); margin-top: -4px; }
+
+  .stepper-wrap { width: 100%; max-width: 580px; }
+
+  .step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 36px; }
+  .step-dot-outer { position: relative; padding-bottom: 28px; }
+  .step-dot { width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.3); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); transition: all 0.4s ease; font-weight: 500; }
+  .step-dot.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+  .step-dot.done { border-color: var(--gold); background: var(--gold); color: var(--black); }
+  .step-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); text-align: center; position: absolute; top: 38px; left: 50%; transform: translateX(-50%); white-space: nowrap; transition: color 0.3s; }
+  .step-dot.active + .step-label, .step-dot-outer.active-outer .step-label { color: var(--gold); }
+  .step-line { width: 48px; height: 1px; background: rgba(201,168,76,0.15); transition: background 0.4s ease; margin: 0 4px; flex-shrink: 0; align-self: flex-start; margin-top: 16px; }
+  .step-line.done { background: var(--gold); }
+
+  .form-card { background: var(--surface); border: 1px solid var(--border-gold); border-radius: 2px; padding: 40px; position: relative; overflow: hidden; }
+  .form-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, transparent, var(--gold), var(--orange), var(--gold), transparent); }
+  .corner-accent { position:absolute; width:18px; height:18px; border-color:var(--gold); border-style:solid; opacity:0.35; }
+  .corner-accent.tl{top:8px;left:8px;border-width:1px 0 0 1px} .corner-accent.tr{top:8px;right:8px;border-width:1px 1px 0 0}
+  .corner-accent.bl{bottom:8px;left:8px;border-width:0 0 1px 1px} .corner-accent.br{bottom:8px;right:8px;border-width:0 1px 1px 0}
+
+  .step-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+  .step-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; font-weight: 300; }
+
+  .form-label { display:block; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:var(--gold); font-weight:500; margin-bottom:8px; }
+  .form-group { margin-bottom: 22px; }
+  .form-input { width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--border-gold); border-radius:1px; color:var(--text-light); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:300; padding:14px 16px; outline:none; transition:border-color 0.3s, background 0.3s; }
+  .form-input::placeholder { color:rgba(138,128,112,0.45); font-size:14px; }
+  .form-input:focus { border-color:var(--gold); background:rgba(201,168,76,0.04); }
+  .form-input:hover:not(:focus) { border-color:rgba(201,168,76,0.3); }
+  textarea.form-input { resize: vertical; min-height: 90px; line-height: 1.6; }
+
+  .options-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .body-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .opt-btn { background: rgba(255,255,255,0.02); border: 1px solid var(--border-gold); border-radius: 1px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300; padding: 10px 16px; cursor: pointer; transition: all 0.25s ease; }
+  .opt-btn:hover { border-color: rgba(201,168,76,0.4); color: var(--text-light); }
+  .opt-btn.selected { background: rgba(201,168,76,0.1); border-color: var(--gold); color: var(--gold-light); }
+
+  .freq-display { font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 700; color: var(--gold); text-align: center; margin: 8px 0 4px; }
+  .freq-sub { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); text-align: center; margin-bottom: 16px; }
+  input[type=range] { width: 100%; appearance: none; height: 3px; background: rgba(201,168,76,0.2); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); cursor: pointer; border: 2px solid var(--black); }
+
+  .nav-buttons { display: flex; gap: 12px; margin-top: 32px; }
+  .btn-back { flex: 0 0 auto; background: transparent; border: 1px solid var(--border-gold); color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding: 16px 24px; cursor: pointer; border-radius: 1px; transition: all 0.3s; }
+  .btn-back:hover { border-color: rgba(201,168,76,0.4); color: var(--text-light); }
+  .btn-next { flex: 1; background: var(--gold); border: none; color: var(--black); font-family: 'DM Sans', sans-serif; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; padding: 18px; cursor: pointer; border-radius: 1px; transition: all 0.3s ease; position: relative; overflow: hidden; }
+  .btn-next::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); transition:left 0.5s; }
+  .btn-next:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-next:hover::before { left:100%; }
+  .btn-next:active { transform: translateY(0); }
+  .btn-next:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+  .status-msg { text-align:center; font-size:13px; margin-top:12px; min-height:18px; color:var(--gold); }
+  .status-msg.error { color:var(--red); }
+
+  .ticker-wrap { width:100%; max-width:580px; overflow:hidden; margin-top:20px; padding:10px 0; border-top:1px solid rgba(201,168,76,0.08); }
+  .ticker-inner { display:flex; gap:40px; animation:ticker 20s linear infinite; white-space:nowrap; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .tick-item { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted); flex-shrink:0; }
+  .tick-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); opacity:0.6; }
+
+  .success-screen { display:none; width:100%; max-width:580px; text-align:center; padding:20px; animation:fadeUp 0.8s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  .success-icon { width:80px; height:80px; border:1px solid var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 32px; position:relative; }
+  .success-icon svg { width:30px; height:30px; stroke:var(--gold); stroke-width:1.5; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+  .success-icon::before { content:''; position:absolute; inset:-8px; border:1px solid rgba(201,168,76,0.2); border-radius:50%; animation:ringPulse 2s ease-in-out infinite; }
+  @keyframes ringPulse { 0%,100%{opacity:0.3;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.05)} }
+  .success-name { font-family:'Playfair Display',serif; font-size:38px; font-weight:700; color:var(--gold); font-style:italic; margin-bottom:8px; }
+  .success-headline { font-family:'Playfair Display',serif; font-size:22px; color:var(--text-light); line-height:1.4; margin-bottom:20px; }
+  .success-message { font-size:14px; font-weight:300; color:var(--text-muted); line-height:1.8; max-width:400px; margin:0 auto; }
+  .success-divider { width:40px; height:1px; background:var(--gold); margin:24px auto; }
+  .success-summary { margin:0 auto; max-width:440px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .sum-item { border:1px solid var(--border-gold); padding:14px 16px; border-radius:2px; background:rgba(201,168,76,0.04); text-align:left; }
+  .sum-label { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+  .sum-value { font-size:14px; color:var(--text-light); font-weight:300; }
+
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-line-top"></div>
+  <div class="badge"><span class="badge-dot"></span>Online Personal Training</div>
+  <h1 class="hero-title"><span class="gold">GP</span> <span class="outline">CODE</span></h1>
+  <p class="hero-subtitle">Ξεκίνα το ταξίδι σου. Κάθε σώμα είναι μοναδικό — το πρόγραμμά σου επίσης.</p>
+
+  <div class="pressure-bar" id="pressureSection">
+    <div class="spots-box">
+      <div class="spots-left"><span class="spots-dot"></span><span class="spots-text">Διαθέσιμες θέσεις αυτό τον μήνα — <strong>μόνο 5 ανοιχτά προγράμματα</strong></span></div>
+      <span class="spots-count" id="spotsNum">3</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Διαθεσιμότητα Απριλίου</span><span class="fill-pct">73% γεμάτο</span></div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+    </div>
+    <div class="timer-box">
+      <span class="timer-label">Η προσφορά λήγει σε</span>
+      <div class="timer-clock">
+        <div class="timer-unit"><span class="timer-num" id="th">00</span><span class="timer-lbl">ώρες</span></div>
+        <span class="timer-sep">:</span>
+        <div class="timer-unit"><span class="timer-num" id="tm">00</span><span class="timer-lbl">λεπτά</span></div>
+        <span class="timer-sep">:</span>
+        <div class="timer-unit"><span class="timer-num" id="ts">00</span><span class="timer-lbl">δευτ.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stepper-wrap" id="stepperWrap">
+    <div class="step-indicator">
+      <div class="step-dot-outer">
+        <div class="step-dot active" id="dot1">1</div>
+        <div class="step-label" id="lbl1">Βασικά</div>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step-dot-outer">
+        <div class="step-dot" id="dot2">2</div>
+        <div class="step-label" id="lbl2">Στόχοι</div>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step-dot-outer">
+        <div class="step-dot" id="dot3">3</div>
+        <div class="step-label" id="lbl3">Υγεία</div>
+      </div>
+      <div class="step-line" id="line3"></div>
+      <div class="step-dot-outer">
+        <div class="step-dot" id="dot4">4</div>
+        <div class="step-label" id="lbl4">Πρόοδος</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="corner-accent tl"></div><div class="corner-accent tr"></div>
+      <div class="corner-accent bl"></div><div class="corner-accent br"></div>
+
+      <!-- STEP 1 -->
+      <div id="step1">
+        <div class="step-title">Ποιος είσαι;</div>
+        <div class="step-subtitle">Τα βασικά στοιχεία για να ξεκινήσουμε.</div>
+        <div class="form-group">
+          <label class="form-label">Πώς σε λένε;</label>
+          <input type="text" class="form-input" id="nameInput" placeholder="Το μικρό σου όνομα" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email επικοινωνίας</label>
+          <input type="email" class="form-input" id="emailInput" placeholder="email@example.com" autocomplete="off" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Πόσες φορές την εβδομάδα θέλεις να προπονείσαι;</label>
+          <div class="freq-display" id="freqDisplay">3</div>
+          <div class="freq-sub">φορές / εβδομάδα</div>
+          <input type="range" min="1" max="7" value="3" step="1" id="freqSlider" oninput="document.getElementById('freqDisplay').textContent=this.value" />
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <span style="font-size:10px;color:var(--text-muted);">1x</span>
+            <span style="font-size:10px;color:var(--text-muted);">7x</span>
+          </div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-next" onclick="goTo(2)">Συνέχεια →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" style="display:none">
+        <div class="step-title">Οι στόχοι σου</div>
+        <div class="step-subtitle">Πες μου τι θέλεις να πετύχεις και πού θέλεις έμφαση.</div>
+        <div class="form-group">
+          <label class="form-label">Τρέχον βάρος (kg)</label>
+          <input type="number" class="form-input" id="currentWeight" placeholder="π.χ. 85" min="40" max="250" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Στόχος βάρους (kg)</label>
+          <input type="number" class="form-input" id="targetWeight" placeholder="π.χ. 75" min="40" max="250" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Σημεία έμφασης (επίλεξε όσα θέλεις)</label>
+          <div class="options-grid body-grid" id="emphasisGrid">
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Κοιλιά</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Στήθος</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Πλάτη</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Ώμοι</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Χέρια</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Πόδια</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Γλουτοί</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Ολόσωμο</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Καρδιο</button>
+          </div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-back" onclick="goTo(1)">← Πίσω</button>
+          <button class="btn-next" onclick="goTo(3)">Συνέχεια →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" style="display:none">
+        <div class="step-title">Υγεία & Ιστορικό</div>
+        <div class="step-subtitle">Σημαντικό για να φτιάξω ένα ασφαλές πρόγραμμα για σένα.</div>
+        <div class="form-group">
+          <label class="form-label">Έχεις κάποιο τραυματισμό ή πρόβλημα υγείας;</label>
+          <div class="options-grid" style="margin-bottom:12px;">
+            <button class="opt-btn" id="injYes" onclick="toggleInjury('yes')">Ναι</button>
+            <button class="opt-btn" id="injNo" onclick="toggleInjury('no')">Όχι</button>
+          </div>
+          <div id="injuryDetail" style="display:none">
+            <textarea class="form-input" id="injuryText" placeholder="Περίγραψέ το σύντομα (π.χ. πρόβλημα στη μέση, τραυματισμός στο γόνατο...)"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Μυοσκελετικά προβλήματα ή παλιοί τραυματισμοί</label>
+          <textarea class="form-input" id="musculoText" placeholder="π.χ. πόνος στη μέση, παλιό διάστρεμμα, πρόβλημα στον ώμο, αρθρίτιδα στο γόνατο... (ή γράψε 'Κανένα')"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Επίπεδο εμπειρίας</label>
+          <div class="options-grid" id="expGrid">
+            <button class="opt-btn" onclick="selectOne(this,'expGrid')">Αρχάριος</button>
+            <button class="opt-btn" onclick="selectOne(this,'expGrid')">Μέτριος</button>
+            <button class="opt-btn" onclick="selectOne(this,'expGrid')">Προχωρημένος</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Διατροφικές συνήθειες</label>
+          <div class="options-grid" id="dietGrid">
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Κανονική</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Vegan</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Vegetarian</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Keto</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Gluten-free</button>
+          </div>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-back" onclick="goTo(2)">← Πίσω</button>
+          <button class="btn-next" onclick="goTo(4)">Συνέχεια →</button>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div id="step4" style="display:none">
+        <div class="step-title">Παρατήρηση Προόδου</div>
+        <div class="step-subtitle">Πώς θέλεις να παρακολουθούμε τα αποτελέσματά σου;</div>
+        <div class="form-group">
+          <label class="form-label">Τρόπος παρακολούθησης</label>
+          <div class="options-grid" id="progressGrid">
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Φωτογραφίες</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Μετρήσεις σώματος</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Εβδομαδιαίος ζυγός</button>
+            <button class="opt-btn" onclick="this.classList.toggle('selected')">Check-in κλήσεις</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Πόσο συχνά θέλεις feedback;</label>
+          <div class="options-grid" id="feedbackGrid">
+            <button class="opt-btn" onclick="selectOne(this,'feedbackGrid')">Εβδομαδιαίο</button>
+            <button class="opt-btn" onclick="selectOne(this,'feedbackGrid')">Δεκαπενθήμερο</button>
+            <button class="opt-btn" onclick="selectOne(this,'feedbackGrid')">Μηνιαίο</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Κάτι άλλο που θέλεις να ξέρω;</label>
+          <textarea class="form-input" id="extraNotes" placeholder="Οτιδήποτε θεωρείς σημαντικό..."></textarea>
+        </div>
+        <div class="nav-buttons">
+          <button class="btn-back" onclick="goTo(3)">← Πίσω</button>
+          <button class="btn-next" id="submitBtn" onclick="handleSubmit()">Αποστολή →</button>
+        </div>
+        <div class="status-msg" id="statusMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticker-wrap" id="tickerWrap">
+    <div class="ticker-inner">
+      <span class="tick-item"><span class="tick-dot"></span>Η Μαρία Κ. εντάχθηκε πριν 2 ώρες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Ο Νίκος Π. ξεκίνησε πρόγραμμα χθες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Η Ελένη Σ. έχασε 6kg σε 6 εβδομάδες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Ο Γιώργης Μ. εντάχθηκε πριν 5 ώρες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Η Κατερίνα Δ. ξεκίνησε πρόγραμμα σήμερα</span>
+      <span class="tick-item"><span class="tick-dot"></span>Η Μαρία Κ. εντάχθηκε πριν 2 ώρες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Ο Νίκος Π. ξεκίνησε πρόγραμμα χθες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Η Ελένη Σ. έχασε 6kg σε 6 εβδομάδες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Ο Γιώργης Μ. εντάχθηκε πριν 5 ώρες</span>
+      <span class="tick-item"><span class="tick-dot"></span>Η Κατερίνα Δ. ξεκίνησε πρόγραμμα σήμερα</span>
+    </div>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+    <div class="success-name" id="successName"></div>
+    <div class="success-headline">Η θέση σου είναι κρατημένη.</div>
+    <div class="success-message">Δεν είσαι απλά ένας ακόμα πελάτης. Είσαι το επόμενο success story του GP Code — και το ξέρω ακόμα και πριν ξεκινήσουμε.</div>
+    <div class="success-divider"></div>
+    <div class="success-summary" id="successSummary"></div>
+  </div>
+</div>
+
+<script>
+  emailjs.init('UPih-guuHDn4iFoB3');
+  let currentStep = 1;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function startTimer(){
+    const end = new Date(); end.setHours(23,59,59,0);
+    function tick(){
+      const now = new Date(); let diff = Math.max(0, Math.floor((end-now)/1000));
+      const h = Math.floor(diff/3600); diff -= h*3600;
+      const m = Math.floor(diff/60); const s = diff - m*60;
+      document.getElementById('th').textContent=pad(h);
+      document.getElementById('tm').textContent=pad(m);
+      document.getElementById('ts').textContent=pad(s);
+    }
+    tick(); setInterval(tick,1000);
+  }
+  startTimer();
+
+  function goTo(step){
+    if(step > currentStep && !validateStep(currentStep)) return;
+    document.getElementById('step'+currentStep).style.display='none';
+    document.getElementById('step'+step).style.display='block';
+    for(let i=1;i<=4;i++){
+      const dot = document.getElementById('dot'+i);
+      if(i < step){ dot.className='step-dot done'; dot.textContent='✓'; }
+      else if(i===step){ dot.className='step-dot active'; dot.textContent=i; }
+      else { dot.className='step-dot'; dot.textContent=i; }
+      const lbl = document.getElementById('lbl'+i);
+      lbl.style.color = i===step ? 'var(--gold)' : '';
+    }
+    for(let i=1;i<=3;i++){
+      document.getElementById('line'+i).className='step-line'+(i<step?' done':'');
+    }
+    currentStep=step;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function validateStep(step){
+    if(step===1){
+      const name=document.getElementById('nameInput').value.trim();
+      const email=document.getElementById('emailInput').value.trim();
+      if(!name){shake(document.getElementById('nameInput'));return false;}
+      if(!email||!email.includes('@')){shake(document.getElementById('emailInput'));return false;}
+    }
+    return true;
+  }
+
+  function selectOne(btn, gridId){
+    document.getElementById(gridId).querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function toggleInjury(val){
+    document.getElementById('injYes').classList.toggle('selected', val==='yes');
+    document.getElementById('injNo').classList.toggle('selected', val==='no');
+    document.getElementById('injuryDetail').style.display = val==='yes'?'block':'none';
+  }
+
+  function getSelected(gridId){
+    return Array.from(document.getElementById(gridId).querySelectorAll('.opt-btn.selected')).map(b=>b.textContent).join(', ')||'—';
+  }
+
+  async function handleSubmit(){
+    const btn=document.getElementById('submitBtn');
+    const msg=document.getElementById('statusMsg');
+    btn.disabled=true; btn.textContent='Αποστολή...';
+    msg.textContent=''; msg.className='status-msg';
+
+    const name=document.getElementById('nameInput').value.trim();
+    const email=document.getElementById('emailInput').value.trim();
+    const freq=document.getElementById('freqSlider').value;
+    const curW=document.getElementById('currentWeight').value||'—';
+    const tarW=document.getElementById('targetWeight').value||'—';
+    const emphasis=getSelected('emphasisGrid');
+    const hasInjury=document.getElementById('injYes').classList.contains('selected');
+    const injury=hasInjury?(document.getElementById('injuryText').value||'Ναι, χωρίς λεπτομέρειες'):'Όχι';
+    const musculo=document.getElementById('musculoText').value||'—';
+    const experience=getSelected('expGrid');
+    const diet=getSelected('dietGrid');
+    const progress=getSelected('progressGrid');
+    const feedback=getSelected('feedbackGrid');
+    const notes=document.getElementById('extraNotes').value||'—';
+
+    const body=`🔥 ΝΕΟΣ ΑΣΚΟΥΜΕΝΟΣ GP CODE\n\nΌνομα: ${name}\nEmail: ${email}\n\n📋 ΒΑΣΙΚΑ\nΠροπονήσεις/εβδομάδα: ${freq}x\n\n🎯 ΣΤΟΧΟΙ\nΤρέχον βάρος: ${curW} kg\nΣτόχος βάρους: ${tarW} kg\nΈμφαση: ${emphasis}\n\n❤️ ΥΓΕΙΑ\nΤραυματισμός: ${injury}\nΜυοσκελετικά: ${musculo}\nΕπίπεδο: ${experience}\nΔιατροφή: ${diet}\n\n📈 ΠΡΟΟΔΟΣ\nΠαρακολούθηση: ${progress}\nFeedback: ${feedback}\n\n💬 ΣΗΜΕΙΩΣΕΙΣ\n${notes}`;
+
+    try {
+      await emailjs.send('service_5nlt3jo','template_4g623xr',{from_name:name,from_email:email,goal:body});
+      const spots=document.getElementById('spotsNum');
+      const cur=parseInt(spots.textContent);
+      if(cur>1) spots.textContent=cur-1;
+      document.getElementById('successName').textContent=name;
+      document.getElementById('successSummary').innerHTML=`
+        <div class="sum-item"><div class="sum-label">Προπονήσεις</div><div class="sum-value">${freq}x / εβδομάδα</div></div>
+        <div class="sum-item"><div class="sum-label">Στόχος</div><div class="sum-value">${tarW} kg</div></div>
+        <div class="sum-item"><div class="sum-label">Έμφαση</div><div class="sum-value">${emphasis}</div></div>
+        <div class="sum-item"><div class="sum-label">Feedback</div><div class="sum-value">${feedback}</div></div>`;
+      document.getElementById('pressureSection').style.display='none';
+      document.getElementById('stepperWrap').style.display='none';
+      document.getElementById('tickerWrap').style.display='none';
+      document.getElementById('successScreen').style.display='block';
+    } catch(e){
+      msg.textContent='Κάτι πήγε στραβά. Δοκίμασε ξανά.';
+      msg.className='status-msg error';
+      btn.disabled=false; btn.textContent='Αποστολή →';
+    }
+  }
+
+  function shake(el){
+    el.style.borderColor='#C0392B';
+    el.style.animation='shake 0.4s ease';
+    el.addEventListener('animationend',()=>{el.style.animation='';el.style.borderColor='';},{once:true});
+    el.focus();
+  }
+</script>
+</body>
+</html>
